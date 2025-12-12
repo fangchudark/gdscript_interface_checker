@@ -300,7 +300,7 @@ static func is_implemented_interface(script: GDScript, interface: Array[MethodIn
 			return false
 		
 		for i in args.size():
-			if (args[i]["type"] != req.args_type[i] and 
+			if (args[i]["type"] != req.args_type[i] or
 				args[i]["class_name"] != req.args_class_name[i]
 			):
 				return false
@@ -317,7 +317,7 @@ static func is_implemented_interface(script: GDScript, interface: Array[MethodIn
 				if args[i]["hint_string"] != req.args_hints_strings[i]:
 					return false
 
-		if (ret["type"] != req.return_type and
+		if (ret["type"] != req.return_type or
 			ret["class_name"] != req.return_class_name
 		):
 			return false
