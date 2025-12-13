@@ -12,12 +12,12 @@ config_version=5
 
 config/name="CheckInterface"
 run/main_scene="uid://bjekj1fdorsgc"
-config/features=PackedStringArray("4.4", "C#", "GL Compatibility")
+config/features=PackedStringArray("4.5", "C#", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [dotnet]
 
-project/assembly_name="CheckInterface"
+project/assembly_name="GDScriptInterfaceChecker"
 
 [rendering]
 
