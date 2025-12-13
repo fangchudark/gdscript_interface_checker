@@ -1,4 +1,4 @@
-class_name GDSInterfaceChecker extends Node
+class_name GDSInterfaceChecker extends RefCounted
 
 static func is_implemented_interface(script: GDScript, interface: Array[GDSMethodInfo]) -> bool:
 	var method_info = script.get_script_method_list()
