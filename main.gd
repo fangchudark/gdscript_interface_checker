@@ -1,7 +1,7 @@
 extends Node
 
 func _ready() -> void:
-	var script = load("res://enemy.gd")
+	var script = load("res://example/enemy.gd")
 
 	var interface : Array[GDSMethodInfo] = [
 		GDSMethodInfo.new("take_damage", 1, [""], [TYPE_INT], "", TYPE_NIL, [], PROPERTY_USAGE_DEFAULT),
