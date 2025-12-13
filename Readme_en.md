@@ -4,20 +4,20 @@ CheckInterface is a sample project based on Godot 4.4 (which supports GDScript a
 
 ## Main functions
 
-- **Interface checking** : Use `is_implemented_interface` (for GDScript) or `IsImplementedInterface` (for C#) to check whether a given GDScript implementation implements a specified set of method signatures.
+- **Interface checking** : Use `GDSInterfaceChecker.is_implemented_interface(...)` (for GDScript) or `IsImplementedInterface(...)` (for C#) to check whether a given GDScript implementation matches a specified set of method signatures.
 - **Supports property getter/setter checks**: can detect property accessor methods (such as `get_xxx`/ `set_xxx`).
 - Checks for matching method name, number of parameters, types of the parameters, and the return value.
 
-## Directory Structure
+## Directory structure
 
 This repo has CheckInterface implementations in GDScript and C#, and a sample Godot project for running them.
 
 For the GDScript implementation, 2 files are required:
-- `gds_interface_checker.gd` / `GDSInterfaceChecker`: GDScript implementation of `is_implemented_interface`.
+- `gds_interface_checker.gd` / `GDSInterfaceChecker`: GDScript implementation of `is_implemented_interface(...)`.
 - `gds_method_info.gd` / `GDSMethodInfo`: Helper for constructing and storing interface validation rules.
 
 For the C# implementation:
-- `Main.cs`：Contains `IsImplementedInterface()` and example usage.
+- `Main.cs`：Contains `IsImplementedInterface(...)` and example usage.
 - `IDamageable.cs`：Example interface written in C#.
 - `Enemy.cs`：Example C# class that implements the IDamageable interface.
 
@@ -38,11 +38,11 @@ Godot project files:
 var script = load("res://enemy.gd")
 
 # Construct interface rules at runtime
-var interface : Array[MethodInfo] = [
-	MethodInfo.new("take_damage", 1, [""], [TYPE_INT], "", TYPE_NIL, [], PROPERTY_USAGE_DEFAULT),
-	MethodInfo.new("get_is_dead", 0, [], [], "", TYPE_BOOL, ["@is_dead_getter"])
+var interface : Array[GDSMethodInfo] = [
+	GDSMethodInfo.new("take_damage", 1, [""], [TYPE_INT], "", TYPE_NIL, [], PROPERTY_USAGE_DEFAULT),
+	GDSMethodInfo.new("get_is_dead", 0, [], [], "", TYPE_BOOL, ["@is_dead_getter"])
 ]
-print(is_implemented_interface(script, interface)) # Outputs true/false
+print(GDSInterfaceChecker.is_implemented_interface(script, interface)) # Outputs true/false
 ```
 
 ### Check an interface from C#
