@@ -1,5 +1,7 @@
 # CheckInterface
 
+English readme available at [Readme_en.md](Readme_en.md).
+
 CheckInterface 是一个基于 Godot 4.4（支持 GDScript 和 C#）的示例项目，演示了如何在 Godot 中检查 GDScript 脚本是否实现了指定的“接口”方法集合。
 该项目适用于需要在运行时动态判断脚本是否符合某种接口规范的场景。
 
