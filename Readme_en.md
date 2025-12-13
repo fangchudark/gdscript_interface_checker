@@ -4,22 +4,29 @@ CheckInterface is a sample project based on Godot 4.4 (which supports GDScript a
 
 ## Main functions
 
-- **Interface checking** : Use `IsImplementedInterface` for C# or `is_implemented_interface` for GDScript to check whether a given GDScript implementation implements a specified set of method signatures.
+- **Interface checking** : Use `is_implemented_interface` (for GDScript) or `IsImplementedInterface` (for C#) to check whether a given GDScript implementation implements a specified set of method signatures.
 - **Supports property getter/setter checks**: can detect property accessor methods (such as `get_xxx`/ `set_xxx`).
 - Checks for matching method name, number of parameters, types of the parameters, and the return value.
 
 ## Directory Structure
 
-This repo provides the interface inspection logic, and a sample Godot project for running it.
+This repo has CheckInterface implementations in GDScript and C#, and a sample Godot project for running them.
 
-- `main.tscn`：The main scene, with attached `main.gd`.
-- `main.gd`: GDScript entry point. Contains the interface inspection logic in GDScript.
-- `Main.cs`：C# entry point. Contains the interface inspection logic in C#.
-- `enemy.gd` Example GDScript that implements the IDamageable interface.
+For the GDScript implementation, 2 files are required:
+- `gds_interface_checker.gd` / `GDSInterfaceChecker`: GDScript implementation of `is_implemented_interface`.
+- `gds_method_info.gd` / `GDSMethodInfo`: Helper for constructing and storing interface validation rules.
+
+For the C# implementation:
+- `Main.cs`：Contains `IsImplementedInterface()` and example usage.
+- `IDamageable.cs`：Example interface written in C#.
 - `Enemy.cs`：Example C# class that implements the IDamageable interface.
-- `IDamageable.cs`：Example of IDamageable interface written in C#.
 
-- Other Godot project configuration files.
+Godot project files:
+- `main.tscn`：The main scene, with attached `main.gd`.
+- `main.gd`: Demonstrates the GDScript implementation. Validates `enemy.gd` against some interface rules and prints the result.
+- `enemy.gd` Example GDScript that implements the IDamageable interface (see `IDamageable.cs`).
+- `project.godot`, associated metadata files.
+
 
 ## Usage instructions
 
@@ -32,8 +39,8 @@ var script = load("res://enemy.gd")
 
 # Construct interface rules at runtime
 var interface : Array[MethodInfo] = [
-    MethodInfo.new("take_damage", 1, [""], [TYPE_INT], "", TYPE_NIL, [], PROPERTY_USAGE_DEFAULT),
-    MethodInfo.new("get_is_dead", 0, [], [], "", TYPE_BOOL, ["@is_dead_getter"])
+	MethodInfo.new("take_damage", 1, [""], [TYPE_INT], "", TYPE_NIL, [], PROPERTY_USAGE_DEFAULT),
+	MethodInfo.new("get_is_dead", 0, [], [], "", TYPE_BOOL, ["@is_dead_getter"])
 ]
 print(is_implemented_interface(script, interface)) # Outputs true/false
 ```
@@ -47,8 +54,8 @@ var script = GD.Load<GDScript>("res://enemy.gd");
 
 // Construct interface rules at runtime
 List<GDScriptMethodInfo> @interface = [
-    new("take_damage", 1, [""], [Variant.Type.Int], "", Variant.Type.Nil, ReturnFlags: PropertyUsageFlags.Default),
-    new("get_is_dead", 0, [], [], "", Variant.Type.Bool, ["@is_dead_getter"]),
+	new("take_damage", 1, [""], [Variant.Type.Int], "", Variant.Type.Nil, ReturnFlags: PropertyUsageFlags.Default),
+	new("get_is_dead", 0, [], [], "", Variant.Type.Bool, ["@is_dead_getter"]),
 ];
 GD.Print(IsImplementedInterface(script, @interface)); // Outputs true/false
 ```
@@ -60,8 +67,8 @@ GD.Print(IsImplementedInterface(script, @interface)); // Outputs true/false
 ```csharp
 public interface IDamageable
 {
-    bool IsDead { get; }
-    void TakeDamage(int damage);
+	bool IsDead { get; }
+	void TakeDamage(int damage);
 }
 ```
 `enemy.gd` implements GDScript versions of these methods (`is_dead`, `take_damage`).
