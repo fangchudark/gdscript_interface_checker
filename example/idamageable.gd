@@ -5,5 +5,5 @@ var is_dead:
     get:
         pass
 
-func tack_damage(_damage:int):
+func take_damage(_damage:int):
     pass
