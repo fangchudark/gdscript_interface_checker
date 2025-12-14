@@ -16,17 +16,17 @@ internal static class InterfaceResolver
     /// <param name="compilation">The compilation context used for type resolution.</param>
     /// <param name="classSymbol">The class symbol to analyze.</param>
     /// <param name="iface">The resolved interface symbol, if successful.</param>
-    /// <param name="typeMap">The type map containing resolved types and their VariantType mappings.</param>
+    /// <param name="propInfo">The resolved GDScript property information.</param>
     /// <returns>True if the interface was successfully resolved; otherwise, false.</returns>
     public static bool TryResolveTargetInterface(
         SourceProductionContext context,
         Compilation compilation,
         INamedTypeSymbol classSymbol,
         out INamedTypeSymbol iface,
-        out Dictionary<ITypeSymbol, (VariantType VariantType, string ClassName)> typeMap)
+        out Dictionary<ITypeSymbol, GDScriptPropertyInfo> propInfo)
     {
         iface = null!;
-        typeMap = []; // Initialize an empty type map
+        propInfo = []; // Initialize an empty type map
 
         // Find the attribute marking the class for interface mapping
         var attr = classSymbol.GetAttributes()
@@ -61,7 +61,7 @@ internal static class InterfaceResolver
         iface = ifaceSymbol;
 
         // Validate the interface and build the type map
-        if (!ValidateInterface(context, compilation, iface, out typeMap))
+        if (!ValidateInterface(context, compilation, iface, out propInfo))
             return false;
 
         return true; // Successfully resolved the interface
@@ -73,22 +73,22 @@ internal static class InterfaceResolver
     /// <param name="context">The source production context used for reporting diagnostics.</param>
     /// <param name="compilation">The compilation context used for type resolution.</param>
     /// <param name="iface">The interface symbol to validate.</param>
-    /// <param name="typeMap">The type map containing resolved types and their VariantType mappings.</param>
+    /// <param name="propInfo">The resolved GDScript property information.</param>
     /// <returns>True if the interface is valid; otherwise, false.</returns>
     private static bool ValidateInterface(
         SourceProductionContext context,
         Compilation compilation,
         INamedTypeSymbol iface,
-        out Dictionary<ITypeSymbol, (VariantType VariantType, string ClassName)> typeMap
+        out Dictionary<ITypeSymbol, GDScriptPropertyInfo> propInfo
     )
     {
-        var localTypeMap = new Dictionary<ITypeSymbol, (VariantType, string)>(SymbolEqualityComparer.Default);
+        var localPropInfo = new Dictionary<ITypeSymbol, GDScriptPropertyInfo>(SymbolEqualityComparer.Default);
         
         // Generic interfaces are not supported
         if (iface.IsGenericType)
         {
             ErrorReporter.ReportGenericInterfaceNotSupported(context, iface);
-            typeMap = [];
+            propInfo = [];
             return false;
         }
     
@@ -96,11 +96,11 @@ internal static class InterfaceResolver
         bool Ensure(ITypeSymbol t, ISymbol symbol)
         {
             if (t == null) return true; // Skip null types
-            if (localTypeMap.ContainsKey(t)) return true; // Skip already-resolved types
+            if (localPropInfo.ContainsKey(t)) return true; // Skip already-resolved types
 
-            if (VariantResolver.TryResolveVariantType(compilation, t, out var variantType, out var className))
+            if (VariantResolver.TryResolveVariantType(compilation, t, out var propInfo))
             {
-                localTypeMap[t] = (variantType, className); // Add resolved type to the map
+                localPropInfo[t] = propInfo; // Add resolved propInfo to the map
                 return true;
             }
 
@@ -115,7 +115,7 @@ internal static class InterfaceResolver
             if (method.IsGenericMethod)
             {
                 ErrorReporter.ReportGenericMethodNotSupported(context, iface, method);
-                typeMap = [];
+                propInfo = [];
                 return false;
             }
         
@@ -126,14 +126,14 @@ internal static class InterfaceResolver
             {
                 if (!Ensure(param.Type, param))
                 {
-                    typeMap = [];
+                    propInfo = [];
                     return false;
                 }
             }
 
             if (!Ensure(method.ReturnType, method))
             {
-                typeMap = [];
+                propInfo = [];
                 return false;
             }
         }
@@ -145,18 +145,18 @@ internal static class InterfaceResolver
             if (prop.IsIndexer)
             {
                 ErrorReporter.ReportIndexerNotSupported(context, iface, prop);
-                typeMap = [];
+                propInfo = [];
                 return false;
             }
     
             if (!Ensure(prop.Type, prop))
             {
-                typeMap = [];
+                propInfo = [];
                 return false;
             }
         }
 
-        typeMap = localTypeMap;
+        propInfo = localPropInfo;
         return true;
     }
 }

@@ -44,9 +44,12 @@ internal class InterfaceMappingGenerator : IIncrementalGenerator
                         compilation,
                         classSymbol,
                         out var iface,
-                        out var typeMap))
+                        out var typeMap)
+                )
+                {
                     continue; // Skip if the interface resolution fails.
-
+                }
+                
                 // Generates the interface mapping code for the resolved interface.
                 CodeBuilder.GenerateInterfaceMapping(
                     spc,

@@ -35,7 +35,7 @@ namespace GDScriptInterfaceChecker;
 /// Corresponds to the "return" entry in the dictionary returned by <see cref="GodotObject.GetMethodList"/>.
 /// The format is similar to the result of <see cref="GodotObject.GetPropertyList"/>.`, but not all entries are used.
 /// </param>
-public record class GDScriptMethodInfo(
+public sealed record class GDScriptMethodInfo(
     string Name,
     GDScriptPropertyInfo[] Args,
     Variant[] DefaultArgs,

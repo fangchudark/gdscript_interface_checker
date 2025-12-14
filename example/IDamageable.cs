@@ -1,5 +1,5 @@
-
 using GDScriptInterface.Abstractions;
+using Godot;
 
 public interface IDamageable
 {
@@ -11,5 +11,5 @@ public interface IDamageable
 [GenerateGDScriptInterfaceMapping(typeof(IDamageable))]
 public static partial class IDamageableGDScriptMapping
 {
-    
+
 }

@@ -17,12 +17,12 @@ internal static class CodeBuilder
     /// <param name="context">The source production context used to add the generated source code.</param>
     /// <param name="classSymbol">The named type symbol representing the class containing the interface mapping.</param>
     /// <param name="iface">The named type symbol representing the target interface.</param>
-    /// <param name="typeMap">A dictionary mapping types to their variant type and class name information.</param>
+    /// <param name="propInfo">The resolved GDScript property information.</param>
     public static void GenerateInterfaceMapping(
         SourceProductionContext context,
         INamedTypeSymbol classSymbol,
         INamedTypeSymbol iface,
-        Dictionary<ITypeSymbol, (VariantType VariantType, string ClassName)> typeMap
+        Dictionary<ITypeSymbol, GDScriptPropertyInfo> propInfo
     )
     {
         var ns = iface.ContainingNamespace.IsGlobalNamespace
@@ -48,16 +48,16 @@ internal static class CodeBuilder
             if (method.MethodKind != MethodKind.Ordinary)
                 continue; // Skip non-ordinary methods (e.g., constructors).
 
-            source.AppendLine(GenerateMethodField(method, typeMap)); // Generate the method field.
+            source.AppendLine(GenerateMethodField(method, propInfo)); // Generate the method field.
         }
 
         // Generate getter and setter fields for each property in the interface.
         foreach (var prop in iface.GetMembers().OfType<IPropertySymbol>())
         {
-            source.AppendLine(GeneratePropertyGetter(prop, typeMap)); // Generate the property getter.
+            source.AppendLine(GeneratePropertyGetter(prop, propInfo)); // Generate the property getter.
 
             if (!prop.IsReadOnly)
-                source.AppendLine(GeneratePropertySetter(prop, typeMap)); // Generate the property setter if not read-only.
+                source.AppendLine(GeneratePropertySetter(prop, propInfo)); // Generate the property setter if not read-only.
         }
 
         source.AppendLine("}");
@@ -72,16 +72,16 @@ internal static class CodeBuilder
     /// Generates the source code for a property getter.
     /// </summary>
     /// <param name="prop">The property symbol representing the target property.</param>
-    /// <param name="typeMap">A dictionary mapping types to their variant type and class name information.</param>
+    /// <param name="propInfo">The resolved GDScript property information.</param>
     /// <returns>A string containing the generated source code for the property getter.</returns>
     private static string GeneratePropertyGetter(
         IPropertySymbol prop,
-        Dictionary<ITypeSymbol, (VariantType VariantType, string ClassName)> typeMap
+        Dictionary<ITypeSymbol, GDScriptPropertyInfo> propInfo
     )
     {
         var fieldName = prop.Name.ToSnakeCase(); // Convert property name to snake_case format.
 
-        var retInfo = typeMap[prop.Type]; // Retrieve return type information from the type map.
+        var retInfo = propInfo[prop.Type]; // Retrieve return type information from the type map.
 
         return $$"""
         public static readonly GDScriptMethodInfo {{prop.Name}}Getter =
@@ -89,9 +89,9 @@ internal static class CodeBuilder
                 Name: "@{{fieldName}}_getter",
                 Args: [],
                 DefaultArgs: [],
-                Flags: MethodFlags.Normal,
+                Flags: MethodFlags.Default,
                 Return: 
-    {{Indent(GeneratePropertyInfo("", retInfo.VariantType, retInfo.ClassName), 4)}}
+    {{Indent(GeneratePropertyInfo("", retInfo), 4)}}
             );
     """;
     }
@@ -100,22 +100,21 @@ internal static class CodeBuilder
     /// Generates the source code for a property setter.
     /// </summary>
     /// <param name="prop">The property symbol representing the target property.</param>
-    /// <param name="typeMap">A dictionary mapping types to their variant type and class name information.</param>
+    /// <param name="propInfo">The resolved GDScript property information.</param>
     /// <returns>A string containing the generated source code for the property setter.</returns>
     private static string GeneratePropertySetter(
         IPropertySymbol prop,
-        Dictionary<ITypeSymbol, (VariantType VariantType, string ClassName)> typeMap
+        Dictionary<ITypeSymbol, GDScriptPropertyInfo> propInfo
     )
     {
         var fieldName = prop.Name.ToSnakeCase(); // Convert property name to snake_case format.
 
-        var valueInfo = typeMap[prop.Type]; // Retrieve parameter type information from the type map.
+        var valueInfo = propInfo[prop.Type]; // Retrieve parameter type information from the type map.
 
         var args = Indent(
             GeneratePropertyInfo(
                 "value",
-                valueInfo.VariantType,
-                valueInfo.ClassName
+                valueInfo
             ),
             4
         ); // Generate indented argument information.
@@ -129,9 +128,9 @@ internal static class CodeBuilder
     {{args}}
                 },
                 DefaultArgs: [],
-                Flags: MethodFlags.Normal,
+                Flags: MethodFlags.Default,
                 Return:
-    {{Indent(GeneratePropertyInfo("", valueInfo.VariantType, valueInfo.ClassName), 4)}}
+    {{Indent(GenerateNilReturn(), 4)}}
             );
     """;
     }
@@ -141,11 +140,11 @@ internal static class CodeBuilder
     /// Generates the source code for a method field.
     /// </summary>
     /// <param name="method">The method symbol representing the target method.</param>
-    /// <param name="typeMap">A dictionary mapping types to their variant type and class name information.</param>
+    /// <param name="propInfo">The resolved GDScript property information.</param>
     /// <returns>A string containing the generated source code for the method field.</returns>
     private static string GenerateMethodField(
         IMethodSymbol method,
-        Dictionary<ITypeSymbol, (VariantType VariantType, string ClassName)> typeMap
+        Dictionary<ITypeSymbol, GDScriptPropertyInfo> propInfo
     )
     {
         var fieldName = method.Name.ToSnakeCase(); // Convert method name to snake_case format.
@@ -156,18 +155,17 @@ internal static class CodeBuilder
                 string.Join(",\n",
                     method.Parameters.Select(p =>
                     {
-                        var info = typeMap[p.Type];
+                        var info = propInfo[p.Type];
                         return GeneratePropertyInfo(
                             p.Name.ToSnakeCase(),
-                            info.VariantType,
-                            info.ClassName
+                            info
                         );
                     })
                 ),
                 4
             ); // Generate indented argument information.
 
-        var retInfo = typeMap[method.ReturnType]; // Retrieve return type information from the type map.
+        var retInfo = propInfo[method.ReturnType]; // Retrieve return type information from the type map.
 
         return $$"""
         public static readonly GDScriptMethodInfo {{method.Name}} =
@@ -178,9 +176,9 @@ internal static class CodeBuilder
     {{args}}
                 },
                 DefaultArgs: [],
-                Flags: MethodFlags.Normal,
+                Flags: MethodFlags.Default,
                 Return: 
-    {{Indent(GeneratePropertyInfo("", retInfo.VariantType, retInfo.ClassName), 4)}}
+    {{Indent(GeneratePropertyInfo("", retInfo), 4)}}
             );
     """;
     }
@@ -189,23 +187,21 @@ internal static class CodeBuilder
     /// Generates the source code for a GDScript property info object.
     /// </summary>
     /// <param name="name">The name of the property.</param>
-    /// <param name="variantType">The variant type of the property.</param>
-    /// <param name="className">The class name associated with the property.</param>
+    /// <param name="propInfo">The resolved GDScript property information.</param>
     /// <returns>A string containing the generated source code for the GDScript property info.</returns>
     private static string GeneratePropertyInfo(
         string name,
-        VariantType variantType,
-        string className
+        GDScriptPropertyInfo propInfo
     )
     {
         return $$"""
 new GDScriptPropertyInfo(
     Name: "{{name}}",
-    ClassName: "{{className}}",
-    Type: {{VariantTypeExtensions.ToString(variantType)}},
-    Hint: PropertyHint.None,
-    HintString: "",
-    Usage: PropertyUsageFlags.None
+    ClassName: "{{propInfo.ClassName}}",
+    Type: {{VariantTypeExtensions.ToString(propInfo.VariantType)}},
+    Hint: {{PropertyHintExtensions.ToString(propInfo.Hint)}},
+    HintString: "{{propInfo.HintString}}",
+    Usage: {{PropertyUsageFlagsExtensions.ToString(propInfo.Usage)}}
 )
 """;
     }
@@ -224,4 +220,25 @@ new GDScriptPropertyInfo(
             text.Split('\n').Select(l => l.Length == 0 ? l : pad + l) // Add padding to each line.
         );
     }
+
+    /// <summary>
+    /// Generates the source code for a GDScript property info object representing void return type.
+    /// This method is used to create a default property info object with no name, class name, or type hint,
+    /// and with the Variant type set to <c>Variant.Type.Nil</c>.
+    /// </summary>
+    /// <returns>A string containing the generated source code for the void return type property info.</returns>
+    private static string GenerateNilReturn()
+    {
+        return """
+new GDScriptPropertyInfo(
+    Name: "",
+    ClassName: "",
+    Type: Variant.Type.Nil,
+    Hint: PropertyHint.None,
+    HintString: "",
+    Usage: PropertyUsageFlags.Default
+)
+""";
+    }
+
 }
