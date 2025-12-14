@@ -13,13 +13,23 @@ CheckInterface 是一个基于 Godot 4.4（支持 GDScript 和 C#）的示例项
 
 ## 目录结构
 
-- `main.tscn`：主场景，挂载了主逻辑脚本。
-- `main.gd`：GDScript 入口，包含接口检查逻辑的 GDScript 实现。
-- `Main.cs`：C# 入口，包含接口检查逻辑的 C# 实现。
-- `enemy.gd`：示例 GDScript，模拟实现了 `IDamageable` 接口。
-- `Enemy.cs`：示例 C# 脚本，实现了 `IDamageable` 接口。
-- `IDamageable.cs`：接口定义（C#）。
-- 其他 Godot 工程配置文件。
+这个仓库包含了用 GDScript 和 C# 实现的 CheckInterface，以及一个用于运行它们的示例 Godot 项目。
+
+对于 GDScript 实现，需要 2 个文件：
+- [`gds_interface_checker.gd`](src/gds_interface_checker.gd) / [`GDSInterfaceChecker`](src/gds_interface_checker.gd):GDScript的 `is_implemented_interface` 实现 .
+- [`gds_method_info.gd`](src/gds_method_info.gd) / [`GDSMethodInfo`](src/gds_method_info.gd): 用于构建和存储接口验证规则的辅助类。
+
+对于 C# 实现：
+- [`GDScriptInterface`](.GDScriptInterface) 用于辅助构建GDScript 接口映射的源代码生成器实现
+- [`Main.cs`](Main.cs)：包含 `InterfaceChecker.IsImplementedInterface()` 的示例用法。
+- [`IDamageable.cs`](example/IDamageable.cs)：用 C# 编写的示例接口，以及源代码生成器的使用示例。
+- [`Enemy.cs`](example/Enemy.cs)：实现 `IDamageable` 接口的示例 C# 类。
+
+Godot 项目文件：
+- `main.tscn`：主要场景，附加了 `main.gd`.
+- [`main.gd`](main.gd): 演示 GDScript 实现。验证 `enemy.gd` 是否实现某些接口规则并打印结果。
+- [`enemy.gd`](enemy.gd)： 实现 IDamageable 接口的示例 GDScript (见 [`IDamageable.cs`](example/IDamageable.cs)).
+- `project.godot`, 相关的元数据文件。
 
 ## 用法说明
 
@@ -41,12 +51,87 @@ print(is_implemented_interface(script, interface)) # 输出 true/false
 在 `Main.cs` 中：
 
 ```csharp
-var script = GD.Load<GDScript>("res://enemy.gd");
+var script = GD.Load<GDScript>("res://example/enemy.gd");
 List<GDScriptMethodInfo> @interface = [
-    new("take_damage", 1, [""], [Variant.Type.Int], "", Variant.Type.Nil, ReturnFlags: PropertyUsageFlags.Default),
-    new("get_is_dead", 0, [], [], "", Variant.Type.Bool, ["@is_dead_getter"]),
+    // take_damage(int damage) -> void
+    new GDScriptMethodInfo(
+        Name: "take_damage",
+        Args: [
+            new GDScriptPropertyInfo(
+                Name: "damage", // Interface checks will not compare parameter names
+                ClassName: "",
+                Type: Variant.Type.Int,
+                Hint: PropertyHint.None,
+                HintString: "",
+                Usage: PropertyUsageFlags.None
+            )
+        ],
+        DefaultArgs: [],
+        Flags: MethodFlags.Normal,
+        Return: new GDScriptPropertyInfo(
+            Name: "",
+            ClassName: "",
+            Type: Variant.Type.Nil,
+            Hint: PropertyHint.None,
+            HintString: "",
+            Usage: PropertyUsageFlags.Default
+        )
+    ),
+
+    // property getter
+    new GDScriptMethodInfo(
+        Name: "@is_dead_getter",
+        Args: [],
+        DefaultArgs: [],
+        Flags: MethodFlags.Normal,
+        Return: new GDScriptPropertyInfo(
+            Name: "",
+            ClassName: "",
+            Type: Variant.Type.Bool,
+            Hint: PropertyHint.None,
+            HintString: "",
+            Usage: PropertyUsageFlags.None
+        )
+    )
 ];
-GD.Print(IsImplementedInterface(script, @interface)); // 输出 true/false
+GD.Print(InterfaceChecker.IsImplementedInterface(script, @interface));
+```
+
+#### 源代码生成器
+
+C#支持使用源码生成器自动映射
+- 在静态类定义上添加特性 `[GenerateGDScriptInterfaceMapping(typeof(IMyInterface))]` （参见 [example/IDamageable.cs](example/IDamageable.cs)）。
+- 编译后，源码生成器会在同名静态类（例如 `IDamageableGDScriptMapping`）中生成映射常量。
+
+[GenerateGDScriptInterfaceMapping](.GDScriptInterface/GDScriptInterface.Abstractions/GenerateGDScriptInterfaceMappingAttribute.cs) 特性的使用需要满足以下条件:
+
+- 只能使用于静态分部类(`static partial class`)
+- 构造时提供的类型必须是接口
+- 提供的接口不能是泛型接口
+- 提供的接口不能具有泛型方法
+- 提供的接口不能包含索引器
+- 提供的接口中所有成员的返回值和参数必须是Variant兼容类型
+
+源码生成器位于 [.GDScriptInterface/GDScriptInterface.SourceGenerator](.GDScriptInterface/GDScriptInterface.SourceGenerator)。
+若在 C# 项目中启用该生成器，编译时会自动生成对应的 GDScript 接口映射辅助代码（无需手动编写映射数组）。
+
+```csharp
+public interface IDamageable
+{
+    bool IsDead { get; }
+    void TakeDamage(int damage);
+}
+
+
+[GenerateGDScriptInterfaceMapping(typeof(IDamageable))]
+public static partial class IDamageableGDScriptMapping
+{
+    
+}
+
+// 对于 C#，您可以使用源生成器来生成 GDScriptMethodInfo
+List<GDScriptMethodInfo> @interface = [IDamageableGDScriptMapping.IsDeadGetter, IDamageableGDScriptMapping.TakeDamage];
+GD.Print(InterfaceChecker.IsImplementedInterface(script,@interface));
 ```
 
 ### 接口定义示例
