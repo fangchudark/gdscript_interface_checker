@@ -148,11 +148,22 @@ internal static class VariantResolver
         switch (elem.SpecialType)
         {
             case SpecialType.System_Int32:
+                variantType = VariantType.PackedInt32Array;
+                return true;
             case SpecialType.System_Int64:
+                variantType = VariantType.PackedInt64Array;
+                return true;
             case SpecialType.System_Byte:
+                variantType = VariantType.PackedByteArray;
+                return true;
             case SpecialType.System_Single:
+                variantType = VariantType.PackedFloat32Array;
+                return true;
             case SpecialType.System_Double:
+                variantType = VariantType.PackedFloat64Array;
+                return true;
             case SpecialType.System_String:
+                variantType = VariantType.PackedStringArray;
                 return true; // Supported primitive types in arrays
         }
 

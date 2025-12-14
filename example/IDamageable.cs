@@ -4,7 +4,7 @@ using GDScriptInterface.Abstractions;
 public interface IDamageable
 {
     bool IsDead { get; }
-    void TakeDamage(int damage);
+    void TakeDamage(int[] damage);
 }
 
 

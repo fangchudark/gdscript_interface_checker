@@ -11,10 +11,10 @@ public partial class Main : Control
 		List<GDScriptMethodInfo> @interface = [IDamageableGDScriptMapping.IsDeadGetter, IDamageableGDScriptMapping.TakeDamage];
 		GD.Print("GDScript implemented C# interface? : ", InterfaceChecker.IsImplementedInterface(script, @interface));
 
-		var interfaceGDScript = GD.Load<GDScript>("res://example/idamageable.gd");
+		var interfaceGDScript = GD.Load<GDScript>("res://example/i_damageable.gd");
 		var gdScriptInterface = InterfaceChecker.ConstructInterfaceFromScript(interfaceGDScript);
-		GD.Print("GDScript implemented GDScript interface? : ", InterfaceChecker.IsImplementedInterface(interfaceGDScript, gdScriptInterface));
-		
+		GD.Print("GDScript interface: ", string.Join(',', gdScriptInterface));
+		GD.Print("GDScript implemented GDScript interface? : ", InterfaceChecker.IsImplementedInterface(script, gdScriptInterface));		
 
 	}
 

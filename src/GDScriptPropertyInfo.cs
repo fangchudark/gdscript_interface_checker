@@ -55,8 +55,10 @@ public record class GDScriptPropertyInfo(
     /// </summary>
     /// <param name="other">The other property to compare with.</param>
     /// <returns><c>true</c> if the properties have the same type; otherwise, <c>false</c>.</returns>
-    public bool IsSameType(GDScriptPropertyInfo other)
-        => Type == other.Type && ClassName == other.ClassName;
+    public bool IsSameType(GDScriptPropertyInfo other) =>
+            Type == other.Type && ClassName == other.ClassName &&
+            Hint == other.Hint && HintString == other.HintString;
+
 
     /// <summary>
     /// Checks whether the property is an enum.
