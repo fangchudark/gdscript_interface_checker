@@ -62,7 +62,20 @@ public static class InterfaceChecker
         );
     }
 
+    /// <summary>
+    /// Constructs an interface definition from the methods defined in a given GDScript.
+    /// </summary>
+    /// <remarks>
+    /// This method retrieves the list of methods from the provided <see cref="GDScript"/> instance
+    /// and converts them into a list of <see cref="GDScriptMethodInfo"/> objects. Each object represents
+    /// the metadata of a method, including its name, arguments, return type, and other relevant details.
+    /// </remarks>
+    /// <param name="script">
+    /// The <see cref="GDScript"/> instance from which to construct the interface definition.
+    /// </param>
+    /// <returns>
+    /// A list of <see cref="GDScriptMethodInfo"/> objects representing the methods defined in the script.
+    /// </returns>
     public static List<GDScriptMethodInfo> ConstructInterfaceFromScript(GDScript script)
         => script.GetScriptMethodList().Select(GDScriptMethodInfo.FromDictionary).ToList();
-    
 }

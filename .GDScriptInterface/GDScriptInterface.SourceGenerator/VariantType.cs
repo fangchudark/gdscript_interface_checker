@@ -57,4 +57,28 @@ internal static class VariantTypeExtensions
     /// <returns>A string representation of the VariantType.</returns>
     public static string ToString(this VariantType variantType)
         => $"Variant.Type.{variantType}";
+
+    /// <summary>
+    /// Maps the given <see cref="VariantType"/> to its corresponding GDScript type name.
+    /// This method provides a string representation of the GDScript type that matches the VariantType.
+    /// For example, <see cref="VariantType.Bool"/> maps to "bool", and <see cref="VariantType.Vector2I"/> maps to "Vector2i".
+    /// If the VariantType does not have a specific mapping, it falls back to the default string representation.
+    /// </summary>
+    /// <param name="variantType">The <see cref="VariantType"/> to map.</param>
+    /// <returns>A string representing the GDScript type name for the given VariantType.</returns>
+    public static string MapToGDScriptName(this VariantType variantType) => variantType switch
+    {
+        VariantType.Nil => "Variant",
+        VariantType.Bool => "bool",
+        VariantType.Int => "int",
+        VariantType.Float => "float",
+        VariantType.String => "string",
+        VariantType.Vector2I => "Vector2i",
+        VariantType.Vector3I => "Vector3i",
+        VariantType.Vector4I => "Vector4i",
+        VariantType.Rect2I => "Rect2i",
+        VariantType.Aabb => "AABB",
+        VariantType.Rid => "RID",
+        _ => variantType.ToString()
+    };
 }

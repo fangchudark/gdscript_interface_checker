@@ -13,7 +13,7 @@ public partial class Main : Control
 
 		var interfaceGDScript = GD.Load<GDScript>("res://example/i_damageable.gd");
 		var gdScriptInterface = InterfaceChecker.ConstructInterfaceFromScript(interfaceGDScript);
-		GD.Print("GDScript interface: ", string.Join(',', gdScriptInterface));
+		GD.Print("GDScript interface: ", string.Join('\n', gdScriptInterface));
 		GD.Print("GDScript implemented GDScript interface? : ", InterfaceChecker.IsImplementedInterface(script, gdScriptInterface));		
 
 	}

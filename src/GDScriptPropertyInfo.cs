@@ -36,7 +36,7 @@ namespace GDScriptInterfaceChecker;
 /// In GDScript, all members of a class are treated as properties. However, in C# or GDExtension, 
 /// explicit decorators or attributes must be used to mark class members as Godot properties.
 /// </example>
-public record class GDScriptPropertyInfo(
+public sealed record class GDScriptPropertyInfo(
     string Name,
     string ClassName,
     Variant.Type Type,
@@ -46,18 +46,36 @@ public record class GDScriptPropertyInfo(
 )
 {
     /// <summary>
-    /// Checks whether the property is a variant or null.
+    /// Checks whether the property is a variant.
     /// </summary>
-    public bool IsVariantOrNull => Type == Variant.Type.Nil;
+    public bool IsVariant => Type == Variant.Type.Nil &&
+            (Usage & PropertyUsageFlags.NilIsVariant) != 0;
 
     /// <summary>
     /// Checks whether the property has the same type as another property.
     /// </summary>
     /// <param name="other">The other property to compare with.</param>
     /// <returns><c>true</c> if the properties have the same type; otherwise, <c>false</c>.</returns>
-    public bool IsSameType(GDScriptPropertyInfo other) =>
-            Type == other.Type && ClassName == other.ClassName &&
+    public bool IsSameType(GDScriptPropertyInfo other)
+    {
+        // Variant type
+        if (IsVariant && other.IsVariant)
+        {
+            return true;
+        }
+
+        // for enum we just check the usage flags and VariantType        
+        // In the implementation of GDScript, it should also check whether the ClassName is the same, 
+        // But here, to be compatible with C# user-defined enums and GD Script enums, the comparison of ClassName is not handled.
+        if (IsEnum && other.IsEnum)
+        {
+            return true;
+        }
+
+        return Type == other.Type && ClassName == other.ClassName &&
             Hint == other.Hint && HintString == other.HintString;
+    }
+
 
 
     /// <summary>
