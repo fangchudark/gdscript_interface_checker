@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
@@ -34,7 +35,7 @@ public static class InterfaceChecker
         // Check if all methods in the interface are implemented by the script
         return @interface.All(req =>
             methods.Any(m =>
-            {                                
+            {
                 // Compare method names
                 if (req.Name != m.Name) return false;
 
@@ -42,7 +43,7 @@ public static class InterfaceChecker
                 if (req.Args.Length != m.Args.Length) return false;
 
                 // Compare return types
-                if (!req.Return.IsSameType(m.Return)) 
+                if (!req.Return.IsSameType(m.Return))
                     return false;
 
                 // Compare argument types one by one
@@ -60,4 +61,8 @@ public static class InterfaceChecker
             })
         );
     }
+
+    public static List<GDScriptMethodInfo> ConstructInterfaceFromScript(GDScript script)
+        => script.GetScriptMethodList().Select(GDScriptMethodInfo.FromDictionary).ToList();
+    
 }

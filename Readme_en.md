@@ -13,18 +13,19 @@ CheckInterface is a sample project based on Godot 4.4 (which supports GDScript a
 This repo has CheckInterface implementations in GDScript and C#, and a sample Godot project for running them.
 
 For the GDScript implementation, 2 files are required:
-- `gds_interface_checker.gd` / `GDSInterfaceChecker`: GDScript implementation of `is_implemented_interface`.
-- `gds_method_info.gd` / `GDSMethodInfo`: Helper for constructing and storing interface validation rules.
+- [`gds_interface_checker.gd`](src/gds_interface_checker.gd) / [`GDSInterfaceChecker`](src/gds_interface_checker.gd): GDScript implementation of `is_implemented_interface`.
+- [`gds_method_info.gd`](src/gds_method_info.gd) / [`GDSMethodInfo`](src/gds_method_info.gd): Helper for constructing and storing interface validation rules.
 
 For the C# implementation:
-- `Main.cs`：Contains `IsImplementedInterface()` and example usage.
-- `IDamageable.cs`：Example interface written in C#.
-- `Enemy.cs`：Example C# class that implements the IDamageable interface.
+- [`GDScriptInterface`](.GDScriptInterface) An implementation of a source code generator used to assist in building GDScript interface mappings
+- [`Main.cs`](Main.cs)：Contains `InterfaceChecker.IsImplementedInterface()` and example usage.
+- [`IDamageable.cs`](example/IDamageable.cs)：Example interface written in C#.
+- [`Enemy.cs`](example/Enemy.cs) ：Example C# class that implements the IDamageable interface.
 
 Godot project files:
 - `main.tscn`：The main scene, with attached `main.gd`.
-- `main.gd`: Demonstrates the GDScript implementation. Validates `enemy.gd` against some interface rules and prints the result.
-- `enemy.gd` Example GDScript that implements the IDamageable interface (see `IDamageable.cs`).
+- [`main.gd`](main.gd): Demonstrates the GDScript implementation. Validates `enemy.gd` against some interface rules and prints the result.
+- [`enemy.gd`](enemy.gd): Example GDScript that implements the IDamageable interface (see [`IDamageable.cs`](example/IDamageable.cs)).
 - `project.godot`, associated metadata files.
 
 
@@ -47,17 +48,90 @@ print(is_implemented_interface(script, interface)) # Outputs true/false
 
 ### Check an interface from C#
 
-`Main.cs`:
+`Main.cs`
 
 ```csharp
-var script = GD.Load<GDScript>("res://enemy.gd");
-
-// Construct interface rules at runtime
+var script = GD.Load<GDScript>("res://example/enemy.gd");
 List<GDScriptMethodInfo> @interface = [
-	new("take_damage", 1, [""], [Variant.Type.Int], "", Variant.Type.Nil, ReturnFlags: PropertyUsageFlags.Default),
-	new("get_is_dead", 0, [], [], "", Variant.Type.Bool, ["@is_dead_getter"]),
+    // take_damage(int damage) -> void
+    new GDScriptMethodInfo(
+        Name: "take_damage",
+        Args: [
+            new GDScriptPropertyInfo(
+                Name: "damage", // Interface checks will not compare parameter names
+                ClassName: "",
+                Type: Variant.Type.Int,
+                Hint: PropertyHint.None,
+                HintString: "",
+                Usage: PropertyUsageFlags.None
+            )
+        ],
+        DefaultArgs: [],
+        Flags: MethodFlags.Normal,
+        Return: new GDScriptPropertyInfo(
+            Name: "",
+            ClassName: "",
+            Type: Variant.Type.Nil,
+            Hint: PropertyHint.None,
+            HintString: "",
+            Usage: PropertyUsageFlags.Default
+        )
+    ),
+
+    // property getter
+    new GDScriptMethodInfo(
+        Name: "@is_dead_getter",
+        Args: [],
+        DefaultArgs: [],
+        Flags: MethodFlags.Normal,
+        Return: new GDScriptPropertyInfo(
+            Name: "",
+            ClassName: "",
+            Type: Variant.Type.Bool,
+            Hint: PropertyHint.None,
+            HintString: "",
+            Usage: PropertyUsageFlags.None
+        )
+    )
 ];
-GD.Print(IsImplementedInterface(script, @interface)); // Outputs true/false
+GD.Print(InterfaceChecker.IsImplementedInterface(script, @interface));
+```
+
+#### Source Generator
+
+C# Support automatic mapping using source code generator
+- Add attribute to the static class definition `[GenerateGDScriptInterfaceMapping(typeof(IMyInterface))]` （see [example/IDamageable.cs](example/IDamageable.cs)）。
+- After compilation, the source generator will generate code in a static class with the same name (for example `IDamageableGDScriptMapping`) generate mapping constants.
+
+[GenerateGDScriptInterfaceMapping](.GDScriptInterface/GDScriptInterface.Abstractions/GenerateGDScriptInterfaceMappingAttribute.cs) The use of the attribute requires meeting the following conditions:
+
+- Can only be used with static partial classes(`static partial class`)
+- The type provided at construction must be an interface
+- The provided interface cannot be a generic interface.
+- The provided interface cannot have generic methods
+- The provided interface cannot contain any indexer
+- The return values and parameters of all members in the provided interface must be variant-compatible types.
+
+The source code generator is located at [.GDScriptInterface/GDScriptInterface.SourceGenerator](.GDScriptInterface/GDScriptInterface.SourceGenerator)。
+If this generator is enabled in C# project, the corresponding GDScript interface mapping helper code will be automatically generated at compile time (no need to manually write the mapping array).
+
+```csharp
+public interface IDamageable
+{
+    bool IsDead { get; }
+    void TakeDamage(int damage);
+}
+
+
+[GenerateGDScriptInterfaceMapping(typeof(IDamageable))]
+public static partial class IDamageableGDScriptMapping
+{
+    
+}
+
+// For C#, you can use source generators to generate GDScriptMethodInfo
+List<GDScriptMethodInfo> @interface = [IDamageableGDScriptMapping.IsDeadGetter, IDamageableGDScriptMapping.TakeDamage];
+GD.Print(InterfaceChecker.IsImplementedInterface(script,@interface));
 ```
 
 ### Interface definition example

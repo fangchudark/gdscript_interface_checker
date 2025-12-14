@@ -1,22 +1,19 @@
+using System.Collections.Generic;
 using GDScriptInterfaceChecker;
 using Godot;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 public partial class Main : Control
 {
-
 	public override void _Ready()
 	{
 		var script = GD.Load<GDScript>("res://example/enemy.gd");
-
+		/*
 		List<GDScriptMethodInfo> @interface = [
 			// take_damage(int damage) -> void
-			new(
+			new GDScriptMethodInfo(
 				Name: "take_damage",
 				Args: [
-					new(
+					new GDScriptPropertyInfo(
 						Name: "damage", // Interface checks will not compare parameter names
 						ClassName: "",
 						Type: Variant.Type.Int,
@@ -27,7 +24,7 @@ public partial class Main : Control
 				],
 				DefaultArgs: [],
 				Flags: MethodFlags.Normal,
-				Return: new(
+				Return: new GDScriptPropertyInfo(
 					Name: "",
 					ClassName: "",
 					Type: Variant.Type.Nil,
@@ -38,12 +35,12 @@ public partial class Main : Control
 			),
 
 			// property getter
-			new(
+			new GDScriptMethodInfo(
 				Name: "@is_dead_getter",
 				Args: [],
 				DefaultArgs: [],
 				Flags: MethodFlags.Normal,
-				Return: new(
+				Return: new GDScriptPropertyInfo(
 					Name: "",
 					ClassName: "",
 					Type: Variant.Type.Bool,
@@ -53,8 +50,11 @@ public partial class Main : Control
 				)
 			)
 		];
-		
-		GD.Print(InterfaceChecker.IsImplementedInterface(script, @interface));
+		*/
+
+		// For C#, you can use source generators to generate GDScriptMethodInfo
+		List<GDScriptMethodInfo> @interface = [IDamageableGDScriptMapping.IsDeadGetter, IDamageableGDScriptMapping.TakeDamage];
+		GD.Print(InterfaceChecker.IsImplementedInterface(script,@interface));
 	}
 
 }

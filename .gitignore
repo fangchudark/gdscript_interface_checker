@@ -2,3 +2,9 @@
 .godot/
 .vscode/
 /android/
+
+# SourceGenerator files
+.GDScriptInterface/GDScriptInterface.SourceGenerator/bin
+.GDScriptInterface/GDScriptInterface.SourceGenerator/obj
+.GDScriptInterface/GDScriptInterface.Abstractions/bin
+.GDScriptInterface/GDScriptInterface.Abstractions/obj
